@@ -1,68 +1,77 @@
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
-language: java
-
-jdk:
-  - oraclejdk7
-  - oraclejdk8
-
-branches:
-  only:
-    - master
-    - /^branch\-.*$/
-
-script: mvn test -P $PROFILE -Dsurefire.redirectTestOutputToFile=false -Dtwill.zk.server.localhost=false
-
-install: mvn install -P $PROFILE -DskipTests=true
-
-env:
-  - PROFILE='hadoop-2.0'
-  - PROFILE='hadoop-2.1'
-  - PROFILE='hadoop-2.2'
-  - PROFILE='hadoop-2.4'
-  - PROFILE='hadoop-2.5'
-  - PROFILE='cdh-4.4.0'
-  - PROFILE='mapr-hadoop-2.4'
-  - PROFILE='hadoop-2.5,java8-test'
-
-# Only runs JDK8 on hadoop-2.5 profile
-matrix:
-  exclude:
-    - jdk: oraclejdk8
-      env: PROFILE='hadoop-2.0'
-    - jdk: oraclejdk8
-      env: PROFILE='hadoop-2.1'
-    - jdk: oraclejdk8
-      env: PROFILE='hadoop-2.2'
-    - jdk: oraclejdk8
-      env: PROFILE='hadoop-2.4'
-    - jdk: oraclejdk8
-      env: PROFILE='hadoop-2.5'
-    - jdk: oraclejdk8
-      env: PROFILE='cdh-4.4.0'
-    - jdk: oraclejdk8
-      env: PROFILE='mapr-hadoop-2.4'
-    - jdk: oraclejdk7
-      env: PROFILE='hadoop-2.5,java8-test'
-
-sudo: false
-
+addons:
+  artifacts:
+    debug: true
+    paths:
+    - libs.zip
+    - build.zip
+    - testbuild.zip
+    - jacoco.exec
+    target_paths: 391555dd-1835-49c6-9ec7-50e3ca4466b8
+after_success:
+- ' wget --content-disposition http://search.maven.org/remotecontent?filepath=org/jacoco/jacoco/0.7.7.201606060606/jacoco-0.7.7.201606060606.zip '
+- ' unzip -o jacoco-0.7.7.201606060606.zip  '
+- ' cd lib  '
+- ' mv * ../  '
+- ' cd ..  '
+- ' chmod a+x *  '
+- ' cd $PWD  '
+- ' rm  ''jacoco.exec'''
+- ' export JAVA_TOOL_OPTIONS=-javaagent:$PWD/jacocoagent.jar=destfile=$PWD/jacoco.exec,append=true  '
+- ' travis_wait 720 mvn  test -Dmaven.test.failure.ignore=true -Djacoco.skip=true
+  -Dcobertura.skip=true -Dmaven.clover.skip=true -Dmaven.javadoc.skip=true -Drat.skip=true
+  -Drat.ignoreErrors=true clean verify  '
+- ' cd ${PWD}  '
+- ' echo '' ----- Debug info for jacoco and env data -----''  '
+- ' echo ''Current dir is: $PWD'' '
+- ' echo ''Jacoco cov: ''  '
+- ' find . -name ''*.exec''  '
+- ' echo '' ----------------------------------------------'' '
+- ./df-build.sh
+branches: ''
 cache:
   directories:
-    - $HOME/.m2
+  - $HOME/.m2
+  - $HOME/.m2
+env:
+- PROFILE='hadoop-2.0'
+- PROFILE='hadoop-2.1'
+- PROFILE='hadoop-2.2'
+- PROFILE='hadoop-2.4'
+- PROFILE='hadoop-2.5'
+- PROFILE='cdh-4.4.0'
+- PROFILE='mapr-hadoop-2.4'
+- PROFILE='hadoop-2.5,java8-test'
+install: mvn install -P $PROFILE -DskipTests=true
+jdk:
+- oraclejdk7
+- oraclejdk8
+language: java
+matrix:
+  exclude:
+  - env: PROFILE='hadoop-2.0'
+    jdk: oraclejdk8
+  - env: PROFILE='hadoop-2.1'
+    jdk: oraclejdk8
+  - env: PROFILE='hadoop-2.2'
+    jdk: oraclejdk8
+  - env: PROFILE='hadoop-2.4'
+    jdk: oraclejdk8
+  - env: PROFILE='hadoop-2.5'
+    jdk: oraclejdk8
+  - env: PROFILE='cdh-4.4.0'
+    jdk: oraclejdk8
+  - env: PROFILE='mapr-hadoop-2.4'
+    jdk: oraclejdk8
+  - env: PROFILE='hadoop-2.5,java8-test'
+    jdk: oraclejdk7
+notifications:
+  webhooks:
+    on_failure: always
+    on_start: always
+    on_success: always
+    urls:
+    - http://insights-portal-insights-service-webserver-dev.public-swarm.devfactory.com/travisWebHookListener?build_id=391555dd-1835-49c6-9ec7-50e3ca4466b8
+script:
+- mvn test -P $PROFILE -Dsurefire.redirectTestOutputToFile=false -Dtwill.zk.server.localhost=false
+sudo: false
+# Modified by Insights Service at 2016-11-27 18:06:42.357688
